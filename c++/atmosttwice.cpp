@@ -1,67 +1,79 @@
 #include <iostream>
+#include <cmath>
 #include <vector>
+#include <climits>
 #include <algorithm>
-#include <string>
 using namespace std;
-bool check(vector<int>&c){
-	for(int i = 0 ; i < c.size() ; i++){
-		if(c[i]>2) return false;
-	}
-	return true;
-}
+
+
 int main(){
-	long long u;
-	while(cin>>u){
-		vector<int>digits;
-		vector<int>c(10,0);
-		while(u){
-			int ans = u%10;
-			u/=10;
-			digits.push_back(ans);
-			c[ans]++;
-		}
-		int index = 0;
-		for(int i = 0 ; i < digits.size() ; i++){
-			
-			if(check(c) && digits[i] == 0){
-				continue;
-			}
+  string s;
+  cin >> s;
 
-			while(digits[i] != 0){
-				c[digits[i]]--;
-				digits[i]--;
-				c[digits[i]]++;
+  vector<vector<int> > cant(20, vector<int>(15, 0));
 
-				if(check(c)){
-					break;
-				}
+  for (int i = 0; i < s.size(); i++){
+    for(int j = i; j < s.size(); j++){
+      cant[j][s[i] - '0']++;
+    }
+  }
 
-			}
-			
-			if(check(c) && digits[i] != 0){
-				index = i;
-				break;
-			}else{
-				c[digits[i]]--;
-			}
-		}
-		int n = digits.size();
-		cout << "index: " << index << endl;
-		cout << "Rindex: " << n - 1 - index << endl;
-		int v = 9;
-		reverse(digits.begin(),digits.end());
-		bool prim = true;
-		for(int i = 0 ; i < digits.size() ; i++){
-			while(prim && digits[i] == 0 && i <= n - index - 1){
-				i++;
-			}
-			prim = false;
-			while(c[v] == 2){
-				v--;
-			}
-			if(i > n - 1 - index) c[v]++;
-			cout<<(i <= n - index - 1 ? digits[i] : v);
-		}
-	}
-	return 0;
+//cout << "print1" << endl;
+
+  int i = 0;
+  int cond = 0;
+
+  for (i = 0; i < s.size(); i++){
+    //cout << "el i actual es " << i << endl;
+    while (cant[i][s[i] - '0'] > 2 && s[i] >= '0'){
+      for (int j = i; j < s.size(); j++) cant[j][s[i] - '0']--;
+      s[i]--;
+      if (s[i] >= '0')
+        for (int j = i; j < s.size(); j++) cant[j][s[i] - '0']++;
+      if (s[i] >= '0' && cant[i][s[i] - '0'] < 2){
+        cond = 1;
+      }
+    }
+    while (s[i] < '0'){
+      //cout << s[i];
+      i--;
+      s[i]--;
+      if (s[i] >= '0' && cant[i][s[i] - '0'] < 2){
+        cond = 1;
+        break;
+      }
+    }
+    if (cond) break;
+    if (cant[i][s[i] - '0'] <= 2 && s[i] - '0' >= 0){
+      continue;
+    }
+  }
+
+  //cout << "hola" << endl;
+  //cout << i << endl;
+  //cout << s << endl;
+
+  for (int j = i + 1; j < s.size(); j++){
+    //cout << s << endl;
+    for (int h = 9; h >= 0; h--){
+      if ( (cant[j][h] < 2 && s[j] - '0' != h) || (cant[j][h] < 3 && s[j] - '0' == h)){
+        for (int k = j; k < s.size(); k++) cant[k][h]++;
+        s[j] = '0' + h;
+        break;
+      }
+    }
+  }
+
+  string s2 = "";
+
+  if(s[0] == '0'){
+    for (int i = 1; i < s.size(); i++)
+      s2 += s[i];
+  }
+  else{
+    s2 = s;
+  }
+  cout << s2 << endl;
+
+  return 0;
 }
