@@ -1,119 +1,84 @@
-#include <iostream>
-#include <climits>
-#include <vector>
-#include <cassert>
-#include <cstring>
+#include <bits/stdc++.h>
+
 using namespace std;
-#define MAXN 100000
-#define INF INT_MAX
+
+typedef long long ll;
+
 class Dinic {
-	long long n, m, head[MAXN], level[MAXN], s, t, work[MAXN];
 	struct edge {
-		long long v, c, f, nxt;
-		edge() {}
-		edge(long long v, long long c, long long f, long long nxt): v(v), c(c), f(f), nxt(nxt) {}
-	} e[MAXN];
-	bool _bfs() {
-		static long long q[MAXN];
-		memset(level, -1, sizeof(long long) * n);
-		long long le = 0, ri = 0;
-		q[ri++] = s;
-		level[s] = 0;
-		while(le < ri) {
-			for(long long k = q[le++], i = head[k]; i != -1; i = e[i].nxt) {
-				if(e[i].f < e[i].c && level[e[i].v] == -1) {
-					level[e[i].v] = level[k] + 1;
-					q[ri++] = e[i].v;
-				}
-			}
-		}
-		return (level[t] != -1);
+    	int to, rev;
+    	ll f, cap;
+	};
+ 
+	vector<vector<edge>> g;
+	vector<ll> dist;
+	vector<int> q, work;
+	int n, sink;
+ 
+	bool bfs(int start, int finish) {
+    	dist.assign(n, -1);
+    	dist[start] = 0;
+    	int head = 0, tail = 0;
+    	q[tail++] = start;
+    	while (head < tail) {
+        	int u = q[head++];
+        	for (const edge &e : g[u]) {
+            	int v = e.to;
+            	if (dist[v] == -1 and e.f < e.cap) {
+                	dist[v] = dist[u] + 1;
+                	q[tail++] = v;
+            	}
+        	}
+    	}
+    	return dist[finish] != -1;
 	}
-	long long _dfs(long long u, long long f) {
-		if(u == t)
-			return f;
-		for(long long& i = work[u]; i != -1; i = e[i].nxt) {
-			if(e[i].f < e[i].c && level[u] + 1 == level[e[i].v]) {
-				long long minf = _dfs(e[i].v, min(f, e[i].c - e[i].f));
-				if(minf > 0) {
-					e[i].f += minf;
-					e[i ^ 1].f -= minf;
-					return minf;
-				}
-			}
-		}
-		return 0;
+ 
+	ll dfs(int u, ll f) {
+    	if (u == sink)
+        	return f;
+    	for (int &i = work[u]; i < (int)g[u].size(); ++i) {
+        	edge &e = g[u][i];
+        	int v = e.to;
+        	if (e.cap <= e.f or dist[v] != dist[u] + 1)
+            	continue;
+        	ll df = dfs(v, min(f, e.cap - e.f));
+        	if (df > 0) {
+            	e.f += df;
+            	g[v][e.rev].f -= df;
+            	return df;
+        	}
+    	}
+    	return 0;
 	}
+ 
 public:
-	void init(long long nn, long long src, long long dst) {
-		n = nn;
-		s = src;
-		t = dst;
-		m = 0;
-		memset(head, -1, sizeof(long long) * n);
+	Dinic(int n) {
+    	this->n = n;
+    	g.resize(n);
+    	dist.resize(n);
+    	q.resize(n);
 	}
-	void addEdge(long long u, long long v, long long c, long long rc) {
-		//assert(u < n);
-		//assert(v < n);
-		e[m] = edge(v, c, 0, head[u]);
-		head[u] = m++;
-		e[m] = edge(u, rc, 0, head[v]);
-		head[v] = m++;
-		//assert(m < MAXN);
+ 
+	void add_edge(int u, int v, ll cap) {
+    	edge a = {v, (int)g[v].size(), 0, cap};
+    	edge b = {u, (int)g[u].size(), 0, 0}; //Poner cap en vez de 0 si la arista es bidireccional
+    	g[u].push_back(a);
+    	g[v].push_back(b);
 	}
-	long long maxFlow() {
-		long long ret = 0;
-		while(_bfs()) {
-			memcpy(work, head, sizeof(long long) * n);
-			while(true) {
-				long long delta = _dfs(s, INF);
-				if(delta == 0)
-					break;
-				ret += delta;
-			}
-		}
-		return ret;
+ 
+	ll max_flow(int source, int dest) {
+    	sink = dest;
+    	ll ans = 0;
+    	while (bfs(source, dest)) {
+        	work.assign(n, 0);
+        	while (ll delta = dfs(source, LLONG_MAX))
+            	ans += delta;
+    	}
+    	return ans;
 	}
 };
 
-int main(){
-    long long V,E;
-    long long a,b;
-    //Acelerar I/O
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    //Lectura vertices arista
-    while(true)
-    {
-	    // Inicializacion mega-hermosa
-	    //cerr<<V<<E<<endl;
-	    cin >> V >> E;
-	    if(V==0 && E==0)break;
-	    Dinic G;
-	    G.init(V+2,0,V+1);
-	   // cerr<<"asd"<<endl;
-	    //Lectura del grafo
-	    //cerr<<"V= "<<V<<endl;
-	    for(long long i = 0; i < V ; ++i)
-	    {
-	    	//cerr<<"i= "<<i<<endl;
-	    	long long n;
-	    	cin>>n;
-	    	if(!n){
-	    		G.addEdge(0,i+1,1,0);
-	    	}
-	    	else{
-	    		G.addEdge(i+1,V+1,1,0);
-	    	}
-	    }
-	    for(long long i = 0; i < E ;i++){
-	            cin >> a >> b;
-	            // Los -1 son por numerar desde 1.
-	            G.addEdge(a,b,1,1);
-	    }
-	    // Respuesta hermosa
-	    cout << G.maxFlow() << endl;
-	    //G.clear();
-    }
-    return 0;
+
+int main() {
+	return 0;
 }
